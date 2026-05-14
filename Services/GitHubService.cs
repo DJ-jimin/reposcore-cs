@@ -261,13 +261,13 @@ namespace RepoScore.Services
             bool hasNextPage = true;
             var now = DateTimeOffset.UtcNow;
 
-            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues(since);
+            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues();
 
             while (hasNextPage)
             {
                 var query = new Octokit.GraphQL.Query()
                     .Repository(_repo, _owner)
-                    .Issues(first: 100, after: cursor, states: new[] { IssueState.Open }, since: since, orderBy: new IssueOrder { Field = IssueOrderField.CreatedAt, Direction = OrderDirection.Desc })
+                    .Issues(first: 100, after: cursor, states: new[] { IssueState.Open }, orderBy: new IssueOrder { Field = IssueOrderField.CreatedAt, Direction = OrderDirection.Desc })
                     .Select(s => new
                     {
                         s.PageInfo.HasNextPage,
@@ -284,7 +284,7 @@ namespace RepoScore.Services
                                 c.CreatedAt,
                                 AuthorLogin = c.Author.Login
                             }).ToList(),
-                            TimelineItems = issue.TimelineItems(first: 10, itemTypes: new[] { IssueTimelineItemsItemType.CrossReferencedEvent }).Nodes.Select(t => new
+                            TimelineItems = issue.TimelineItems(10, itemTypes: new[] { IssueTimelineItemsItemType.CrossReferencedEvent }).Nodes.Select(t => new
                             {
                                 Source = t
                             }).ToList(),
