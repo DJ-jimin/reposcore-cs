@@ -254,20 +254,20 @@ namespace RepoScore.Services
 
         // 저장소의 열린 이슈를 대상으로 최근 48시간 내 선점 현황을 조회.
         // 이슈별로 선점 댓글 작성자, 남은 기한, 연결된 PR 유무를 파악하여 반환.
-        public ClaimsData GetRecentClaimsData()
+        public ClaimsData GetRecentClaimsData(DateTimeOffset? since = null)
         {
             var claimsData = new ClaimsData();
             string? cursor = null;
             bool hasNextPage = true;
             var now = DateTimeOffset.UtcNow;
 
-            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues();
+            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues(since);
 
             while (hasNextPage)
             {
                 var query = new Octokit.GraphQL.Query()
                     .Repository(_repo, _owner)
-                    .Issues(first: 100, after: cursor, states: new[] { IssueState.Open }, orderBy: new IssueOrder { Field = IssueOrderField.CreatedAt, Direction = OrderDirection.Desc })
+                    .Issues(first: 100, after: cursor, states: new[] { IssueState.Open }, since: since, orderBy: new IssueOrder { Field = IssueOrderField.CreatedAt, Direction = OrderDirection.Desc })
                     .Select(s => new
                     {
                         s.PageInfo.HasNextPage,
@@ -284,6 +284,10 @@ namespace RepoScore.Services
                                 c.CreatedAt,
                                 AuthorLogin = c.Author.Login
                             }).ToList()
+                            TimelineItems = issue.TimelineItems(first: 10, itemTypes: new[] { IssueTimelineItemsItemType.CrossReferencedEvent }).Nodes.Select(t => new
+                            {
+                                Source = t
+                            }).ToList(),
                         }).ToList()
                     });
 
