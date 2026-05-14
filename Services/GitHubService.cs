@@ -284,7 +284,7 @@ namespace RepoScore.Services
                                 c.CreatedAt,
                                 AuthorLogin = c.Author.Login
                             }).ToList(),
-                            TimelineItems = issue.TimelineItems(10, itemTypes: new[] { IssueTimelineItemsItemType.CrossReferencedEvent }).Nodes.Select(t => new
+                            TimelineItems = issue.TimelineItems(10, null, null, null, new[] { IssueTimelineItemsItemType.CrossReferencedEvent }).Nodes.Select(t => new
                             {
                                 Source = t
                             }).ToList(),
