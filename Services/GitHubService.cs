@@ -251,7 +251,7 @@ namespace RepoScore.Services
 
             return issueRecords;
         }
-
+        private ClaimsData _accumulatedClaims = new ClaimsData();
         // 저장소의 열린 이슈를 대상으로 최근 48시간 내 선점 현황을 조회.
         // 이슈별로 선점 댓글 작성자, 남은 기한, 연결된 PR 유무를 파악하여 반환.
         public ClaimsData GetRecentClaimsData(DateTimeOffset? since = null)
@@ -338,7 +338,15 @@ namespace RepoScore.Services
                 cursor = result.EndCursor;
             }
 
-            return claimsData;
+            foreach (var item in claimsData.ClaimedMap)
+            {
+                if (_accumulatedClaims.ClaimedMap.ContainsKey(item.Key))
+                    _accumulatedClaims.ClaimedMap[item.Key].AddRange(item.Value);
+                else
+                    _accumulatedClaims.ClaimedMap[item.Key] = item.Value;
+            }
+
+            return _accumulatedClaims; 
         }
 
         public List<PRWithLinkedIssues> GetOpenPullRequestsWithLinkedIssues(DateTimeOffset? since = null)
