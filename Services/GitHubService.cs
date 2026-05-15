@@ -261,7 +261,7 @@ namespace RepoScore.Services
             bool hasNextPage = true;
             var now = DateTimeOffset.UtcNow;
 
-            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues();
+            List<PRWithLinkedIssues> openPrs = GetOpenPullRequestsWithLinkedIssues(since);
 
             while (hasNextPage)
             {
@@ -300,7 +300,7 @@ namespace RepoScore.Services
 
                     foreach (var comment in issue.Comments)
                     {
-                        if ((now - comment.CreatedAt).TotalHours > 48) continue;
+                        if (comment.CreatedAt < (since ?? now.AddHours(-48))) continue;
 
                         var login = comment.AuthorLogin ?? "unknown";
 
@@ -341,7 +341,7 @@ namespace RepoScore.Services
             return claimsData;
         }
 
-        public List<PRWithLinkedIssues> GetOpenPullRequestsWithLinkedIssues()
+        public List<PRWithLinkedIssues> GetOpenPullRequestsWithLinkedIssues(DateTimeOffset? since = null)
         {
             var prsWithIssues = new List<PRWithLinkedIssues>();
             string? cursor = null;
@@ -372,6 +372,16 @@ namespace RepoScore.Services
                     });
 
                 var result = _graphQLConnection.Run(query).Result;
+
+                if (since.HasValue)
+                {
+                    result = new
+                    { 
+                        result.HasNextPage,
+                        result.EndCursor,
+                        Items = result.Items.Where(pr => pr.UpdatedAt >= since.Value).ToList()
+                    };
+                }
 
                 foreach (var pr in result.Items)
                 {
